@@ -1,0 +1,2573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Persefio — Role Acquisition</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8C97A;
+  --gold-dim: #8A6A28;
+  --gold-faint: rgba(201,168,76,0.08);
+  --cream: #F4EFE4;
+  --cream-dim: #C8BFA8;
+  --cream-faint: rgba(244,239,228,0.06);
+  --dark: #0D0C0A;
+  --dark-2: #131210;
+  --dark-3: #1A1815;
+  --dark-4: #222018;
+  --dark-5: #2A2720;
+  --border: rgba(201,168,76,0.2);
+  --border-dim: rgba(201,168,76,0.09);
+  --red: #C94C4C;
+  --green: #4CAF7A;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--dark);
+  color: var(--cream);
+  font-family: 'Jost', sans-serif;
+  font-weight: 300;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── NAV ── */
+.top-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 48px;
+  background: rgba(13,12,10,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--gold-light);
+}
+
+.nav-logo span { color: var(--cream-dim); font-weight: 300; font-size: 13px; margin-left: 10px; letter-spacing: 0.2em; text-transform: uppercase; }
+
+.nav-badge {
+  background: var(--red);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ── ADMIN LOGIN MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13,12,10,0.92);
+  backdrop-filter: blur(16px);
+  z-index: 5000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal-box {
+  background: var(--dark-3);
+  border: 1px solid var(--border);
+  padding: 48px;
+  max-width: 400px;
+  width: 90%;
+  position: relative;
+  animation: fadeUp 0.35s ease both;
+}
+
+.modal-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--gold), transparent);
+}
+
+.modal-eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+  font-weight: 400;
+}
+
+.modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 30px;
+  font-weight: 300;
+  color: var(--cream);
+  margin-bottom: 8px;
+}
+
+.modal-title em { font-style: italic; color: var(--gold-light); }
+
+.modal-desc {
+  font-size: 12px;
+  color: var(--cream-dim);
+  margin-bottom: 32px;
+  line-height: 1.7;
+}
+
+.modal-field { margin-bottom: 18px; }
+
+.modal-error {
+  font-size: 11px;
+  color: var(--red);
+  margin-top: 12px;
+  display: none;
+  letter-spacing: 0.05em;
+}
+
+.modal-error.show { display: block; }
+
+.modal-close {
+  position: absolute;
+  top: 18px; right: 20px;
+  background: transparent;
+  border: none;
+  color: var(--cream-dim);
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.2s;
+  line-height: 1;
+}
+
+.modal-close:hover { color: var(--gold); }
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+  align-items: center;
+}
+
+.btn-modal-login {
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dark);
+  background: var(--gold);
+  border: none;
+  padding: 14px 32px;
+  cursor: pointer;
+  transition: all 0.3s;
+  flex: 1;
+}
+
+.btn-modal-login:hover { background: var(--gold-light); }
+
+.modal-hint {
+  font-size: 10px;
+  color: var(--cream-dim);
+  opacity: 0.4;
+  letter-spacing: 0.05em;
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* Admin logout button */
+.admin-logout {
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 1px;
+}
+
+.admin-logout:hover { border-color: var(--red); color: var(--red); }
+
+/* ── VIEWS ── */
+.view { display: none; padding-top: 90px; min-height: 100vh; }
+.view.active { display: block; }
+
+/* ══════════════════════════════════════════
+   CLIENT FORM VIEW
+══════════════════════════════════════════ */
+.client-hero {
+  padding: 60px 48px 40px;
+  position: relative;
+  border-bottom: 1px solid var(--border-dim);
+  overflow: hidden;
+}
+
+.client-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(201,168,76,0.05) 0%, transparent 70%);
+}
+
+.client-hero-inner { position: relative; max-width: 800px; }
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.eyebrow::before {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 1px;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+
+.client-hero h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(36px, 5vw, 62px);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--cream);
+  margin-bottom: 16px;
+}
+
+.client-hero h1 em { font-style: italic; color: var(--gold-light); }
+
+.client-hero p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--cream-dim);
+  max-width: 520px;
+}
+
+.progress-bar-wrap {
+  margin: 40px 48px 0;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.progress-step {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-step::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  right: -50%;
+  height: 1px;
+  background: var(--border-dim);
+  z-index: 0;
+}
+
+.progress-step:last-child::before { display: none; }
+
+.step-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border-dim);
+  background: var(--dark-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--cream-dim);
+  position: relative;
+  z-index: 1;
+  transition: all 0.4s;
+}
+
+.progress-step.done .step-dot {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--dark);
+}
+
+.progress-step.active .step-dot {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 16px rgba(201,168,76,0.3);
+}
+
+.step-label {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.progress-step.active .step-label { color: var(--gold); }
+.progress-step.done .step-label { color: var(--gold-dim); }
+
+/* Form Container */
+.form-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 48px 80px;
+}
+
+.form-section {
+  display: none;
+  animation: fadeUp 0.4s ease both;
+}
+.form-section.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 300;
+  color: var(--cream);
+  margin-bottom: 8px;
+}
+.section-heading em { font-style: italic; color: var(--gold-light); }
+
+.section-sub {
+  font-size: 13px;
+  color: var(--cream-dim);
+  margin-bottom: 40px;
+  line-height: 1.7;
+}
+
+/* Field Groups */
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.field-row.thirds { grid-template-columns: 1fr 1fr 1fr; }
+.field-row.full { grid-template-columns: 1fr; }
+
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+
+label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  font-weight: 400;
+}
+
+label .req { color: var(--gold); margin-left: 3px; }
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="url"],
+select,
+textarea {
+  background: var(--dark-3);
+  border: 1px solid var(--border-dim);
+  color: var(--cream);
+  font-family: 'Jost', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  padding: 14px 18px;
+  outline: none;
+  transition: all 0.3s;
+  width: 100%;
+  border-radius: 1px;
+  appearance: none;
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C9A84C' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 18px center;
+  padding-right: 44px;
+  cursor: pointer;
+}
+
+select option { background: var(--dark-3); }
+
+textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--gold);
+  background: var(--dark-4);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.1), 0 4px 20px rgba(201,168,76,0.05);
+}
+
+input::placeholder, textarea::placeholder { color: rgba(200,191,168,0.3); }
+
+.field-hint {
+  font-size: 11px;
+  color: var(--cream-dim);
+  opacity: 0.6;
+  margin-top: 2px;
+}
+
+/* Role Suggest Panel */
+.role-suggest-wrap { position: relative; }
+
+.role-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0;
+  background: var(--dark-4);
+  border: 1px solid var(--border);
+  border-top: none;
+  z-index: 50;
+  max-height: 280px;
+  overflow-y: auto;
+  display: none;
+}
+
+.role-suggestions.open { display: block; }
+
+.role-suggest-item {
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.role-suggest-item:last-child { border-bottom: none; }
+.role-suggest-item:hover { background: var(--gold-faint); }
+
+.suggest-role-name {
+  font-size: 13px;
+  color: var(--cream);
+  font-weight: 400;
+  margin-bottom: 2px;
+}
+
+.suggest-role-cat {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+
+.role-cat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.role-cat-chip {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  border: 1px solid var(--border-dim);
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 1px;
+  background: transparent;
+  font-family: 'Jost', sans-serif;
+}
+
+.role-cat-chip:hover, .role-cat-chip.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-faint);
+}
+
+/* Salary / Range Slider */
+.range-group { display: flex; flex-direction: column; gap: 10px; }
+.range-values { display: flex; justify-content: space-between; align-items: center; }
+.range-val { font-size: 13px; color: var(--gold-light); font-weight: 400; }
+.range-label { font-size: 10px; color: var(--cream-dim); letter-spacing: 0.1em; }
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, var(--gold) 0%, var(--gold) var(--val, 50%), var(--dark-5) var(--val, 50%));
+  border: none;
+  outline: none;
+  padding: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2px solid var(--dark);
+  box-shadow: 0 0 8px rgba(201,168,76,0.4);
+  cursor: pointer;
+}
+
+/* Checkbox / Radio Pills */
+.pill-group { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.pill-option {
+  position: relative;
+}
+
+.pill-option input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+.pill-option label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  border: 1px solid var(--border-dim);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 1px;
+  font-weight: 300;
+}
+
+.pill-option input:checked + label {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-faint);
+}
+
+.pill-option label:hover {
+  border-color: rgba(201,168,76,0.4);
+  color: var(--cream);
+}
+
+/* Info Box */
+.info-box {
+  background: var(--gold-faint);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  border-radius: 1px;
+}
+
+.info-box-title {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+  font-weight: 400;
+}
+
+.info-box p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--cream-dim);
+}
+
+/* Plan Picker */
+.plan-picker { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+.plan-pick-card {
+  position: relative;
+  border: 1px solid var(--border-dim);
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: var(--dark-3);
+}
+
+.plan-pick-card:hover { border-color: var(--gold); background: var(--dark-4); }
+
+.plan-pick-card.selected {
+  border-color: var(--gold);
+  background: var(--dark-4);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.1), inset 0 0 40px rgba(201,168,76,0.03);
+}
+
+.plan-pick-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 22px; height: 22px;
+  background: var(--gold);
+  color: var(--dark);
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.plan-pick-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  color: var(--cream);
+  margin-bottom: 4px;
+}
+
+.plan-pick-price {
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--gold);
+  margin-bottom: 2px;
+}
+
+.plan-pick-sub { font-size: 10px; color: var(--cream-dim); letter-spacing: 0.1em; margin-bottom: 14px; }
+
+.plan-pick-detail {
+  font-size: 11px;
+  color: var(--cream-dim);
+  line-height: 1.8;
+  border-top: 1px solid var(--border-dim);
+  padding-top: 12px;
+}
+
+.plan-pick-detail span { display: block; }
+.plan-pick-detail span::before { content: '— '; color: var(--gold-dim); }
+
+.plan-badge-pick {
+  position: absolute;
+  top: -1px; left: 20px;
+  background: var(--gold);
+  color: var(--dark);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+}
+
+/* Form Navigation */
+.form-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border-dim);
+  gap: 12px;
+}
+
+.btn-back {
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-back:hover { border-color: var(--gold-dim); color: var(--cream); }
+
+.btn-next {
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dark);
+  background: var(--gold);
+  border: none;
+  padding: 14px 40px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-next:hover { background: var(--gold-light); transform: translateY(-1px); }
+.btn-next::after { content: '→'; font-size: 14px; }
+
+.btn-submit {
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dark);
+  background: var(--gold);
+  border: none;
+  padding: 16px 48px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-submit:hover { background: var(--gold-light); }
+
+/* ── Success Screen ── */
+.success-screen {
+  display: none;
+  min-height: calc(100vh - 90px);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 80px 48px;
+}
+
+.success-screen.active { display: flex; }
+
+.success-icon {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin-bottom: 32px;
+  animation: pulseGold 2s infinite;
+}
+
+@keyframes pulseGold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.3); }
+  50% { box-shadow: 0 0 0 16px rgba(201,168,76,0); }
+}
+
+.success-screen h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 48px;
+  font-weight: 300;
+  color: var(--cream);
+  margin-bottom: 16px;
+}
+.success-screen h2 em { font-style: italic; color: var(--gold-light); }
+
+.success-screen p {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--cream-dim);
+  max-width: 480px;
+  margin-bottom: 12px;
+}
+
+.success-id {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--gold-dim);
+  text-transform: uppercase;
+  margin-top: 20px;
+}
+
+/* ══════════════════════════════════════════
+   ADMIN DASHBOARD VIEW
+══════════════════════════════════════════ */
+.admin-view { background: var(--dark); }
+
+.admin-header {
+  padding: 40px 48px 32px;
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.admin-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 40px;
+  font-weight: 300;
+  color: var(--cream);
+  line-height: 1;
+}
+
+.admin-title em { font-style: italic; color: var(--gold-light); }
+
+.admin-title span {
+  display: block;
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+
+.admin-stats {
+  display: flex;
+  gap: 2px;
+}
+
+.admin-stat {
+  background: var(--dark-3);
+  border: 1px solid var(--border-dim);
+  padding: 16px 24px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 300;
+  color: var(--gold-light);
+  line-height: 1;
+  display: block;
+}
+
+.stat-lbl {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  display: block;
+  margin-top: 4px;
+}
+
+/* Admin Toolbar */
+.admin-toolbar {
+  padding: 20px 48px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--border-dim);
+  background: var(--dark-2);
+  flex-wrap: wrap;
+}
+
+.search-input-wrap { position: relative; flex: 1; min-width: 200px; }
+
+.search-input-wrap input {
+  background: var(--dark-3);
+  border: 1px solid var(--border-dim);
+  color: var(--cream);
+  font-family: 'Jost', sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  padding: 10px 18px 10px 38px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.search-input-wrap input:focus { border-color: var(--gold); }
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold-dim);
+  font-size: 13px;
+}
+
+.filter-select {
+  background: var(--dark-3);
+  border: 1px solid var(--border-dim);
+  color: var(--cream-dim);
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  padding: 10px 36px 10px 16px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238A6A28' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  letter-spacing: 0.1em;
+  min-width: 140px;
+  border-radius: 1px;
+  transition: border-color 0.3s;
+}
+
+.filter-select:focus { border-color: var(--gold); }
+
+.admin-refresh {
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.admin-refresh:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Admin Content */
+.admin-body {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  min-height: calc(100vh - 300px);
+}
+
+.admin-list-col { border-right: 1px solid var(--border-dim); }
+.admin-detail-col { background: var(--dark-2); position: sticky; top: 90px; height: calc(100vh - 200px); overflow-y: auto; }
+
+/* Submission Card */
+.submission-item {
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.submission-item:hover { background: var(--dark-3); }
+.submission-item.selected { background: var(--dark-4); border-left: 2px solid var(--gold); }
+
+.sub-company {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--cream);
+  margin-bottom: 3px;
+}
+
+.sub-role {
+  font-size: 15px;
+  color: var(--gold-dim);
+  margin-bottom: 6px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+}
+
+.sub-meta {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--cream-dim);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sub-meta span { display: flex; align-items: center; gap: 4px; }
+
+.status-badge {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.status-new { background: rgba(201,168,76,0.12); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+.status-review { background: rgba(100,149,237,0.1); color: #6495ED; border: 1px solid rgba(100,149,237,0.3); }
+.status-active { background: rgba(76,175,122,0.1); color: var(--green); border: 1px solid rgba(76,175,122,0.3); }
+.status-closed { background: rgba(200,191,168,0.07); color: var(--cream-dim); border: 1px solid var(--border-dim); }
+
+.sub-plan-tag {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  border: 1px solid var(--border-dim);
+  padding: 2px 8px;
+  margin-top: 6px;
+  display: inline-block;
+}
+
+.sub-time {
+  font-size: 10px;
+  color: var(--cream-dim);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+/* Admin Detail Panel */
+.detail-header {
+  padding: 28px 28px 20px;
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.detail-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--cream);
+  margin-bottom: 4px;
+  line-height: 1.1;
+}
+.detail-title em { font-style: italic; color: var(--gold-light); }
+
+.detail-company { font-size: 11px; letter-spacing: 0.15em; color: var(--gold-dim); text-transform: uppercase; }
+
+.status-changer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.status-changer select {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  padding: 6px 28px 6px 12px;
+  min-width: 110px;
+}
+
+.detail-body { padding: 24px 28px; }
+
+.detail-section {
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.detail-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+.detail-section-title {
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 14px;
+  font-weight: 400;
+}
+
+.detail-field { margin-bottom: 12px; }
+
+.detail-field-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  opacity: 0.6;
+  margin-bottom: 3px;
+}
+
+.detail-field-value {
+  font-size: 13px;
+  color: var(--cream);
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.detail-field-value.highlight { color: var(--gold-light); font-weight: 400; }
+
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.admin-note-area {
+  width: 100%;
+  background: var(--dark-3);
+  border: 1px solid var(--border-dim);
+  color: var(--cream);
+  font-family: 'Jost', sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 80px;
+  outline: none;
+  line-height: 1.6;
+  transition: border-color 0.3s;
+  border-radius: 1px;
+}
+
+.admin-note-area:focus { border-color: var(--gold); }
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.detail-btn {
+  font-family: 'Jost', sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 1px;
+}
+
+.detail-btn-gold {
+  background: var(--gold);
+  color: var(--dark);
+  border: none;
+}
+
+.detail-btn-gold:hover { background: var(--gold-light); }
+
+.detail-btn-outline {
+  background: transparent;
+  color: var(--cream-dim);
+  border: 1px solid var(--border-dim);
+}
+
+.detail-btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+.empty-detail {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--cream-dim);
+  opacity: 0.4;
+  padding: 60px;
+  text-align: center;
+}
+
+.empty-detail-icon { font-size: 36px; opacity: 0.5; }
+.empty-detail-text { font-size: 12px; letter-spacing: 0.1em; line-height: 1.7; }
+
+/* Priority flag */
+.priority-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.p-express { background: #FF6B6B; }
+.p-scale { background: #6495ED; }
+.p-growth { background: var(--gold); }
+.p-starter { background: var(--green); }
+
+/* Empty list state */
+.empty-list {
+  padding: 80px 32px;
+  text-align: center;
+  color: var(--cream-dim);
+  opacity: 0.4;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--dark-2); }
+::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+
+/* Divider */
+.form-divider {
+  height: 1px;
+  background: var(--border-dim);
+  margin: 32px 0;
+}
+
+/* Review grid */
+.review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 20px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  background: var(--dark-4);
+  border: 1px solid var(--gold);
+  padding: 16px 24px;
+  font-size: 12px;
+  color: var(--cream);
+  z-index: 9998;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.4s;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast-title { color: var(--gold); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 4px; font-weight: 400; }
+
+/* ══════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .admin-body { grid-template-columns: 1fr; }
+  .admin-detail-col { display: none; }
+  .top-nav { padding: 14px 20px; }
+  .form-container { padding: 28px 20px 60px; }
+  .client-hero { padding: 36px 20px 24px; }
+  .progress-bar-wrap { margin: 24px 20px 0; overflow-x: auto; padding-bottom: 4px; }
+  .admin-header { padding: 24px 20px 20px; flex-direction: column; align-items: flex-start; gap: 16px; }
+  .admin-toolbar { padding: 14px 20px; gap: 10px; }
+  .admin-stats { flex-wrap: wrap; gap: 2px; }
+  .admin-stat { min-width: 70px; padding: 12px 16px; }
+  .plan-pick-card { padding: 18px; }
+  .modal-box { padding: 32px 24px; }
+  .submission-item { padding: 16px 20px; }
+  .detail-header { flex-direction: column; gap: 12px; }
+  .status-changer { align-items: flex-start; }
+  .search-input-wrap { min-width: 100%; }
+  .filter-select { min-width: 0; flex: 1; }
+  .success-screen { padding: 48px 20px 60px; }
+  .success-screen h2 { font-size: 36px; }
+  .success-screen > div { width: 100% !important; max-width: 100% !important; box-sizing: border-box; }
+  #nav-right { gap: 8px; }
+  #admin-btn { padding: 7px 12px; font-size: 8px; }
+  .admin-list-col { min-height: 400px; }
+}
+
+@media (max-width: 700px) {
+  .field-row { grid-template-columns: 1fr; }
+  .field-row.thirds { grid-template-columns: 1fr; }
+  .plan-picker { grid-template-columns: 1fr; }
+  .form-nav { flex-direction: column; gap: 12px; }
+  .form-nav .btn-next,
+  .form-nav .btn-back { width: 100%; justify-content: center; text-align: center; }
+  .btn-submit { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .progress-bar-wrap { gap: 0; }
+  .progress-step::before { display: none; }
+  .progress-step .step-label { font-size: 8px; }
+  .step-dot { width: 26px; height: 26px; font-size: 9px; }
+  .client-hero h1 { font-size: 32px; }
+  .section-heading { font-size: 26px; }
+  .plan-picker { grid-template-columns: 1fr; }
+  .admin-stats { display: grid; grid-template-columns: 1fr 1fr; }
+  .nav-logo { font-size: 17px; }
+  .nav-logo span { font-size: 10px; margin-left: 6px; }
+  .review-grid { grid-template-columns: 1fr; }
+  .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+  .range-group input[type="range"] { min-width: 0; }
+  .pill-group { gap: 6px; }
+  .pill-option label { font-size: 10px; padding: 7px 12px; }
+  .role-cat-chips { gap: 6px; }
+  .role-cat-chip { font-size: 9px; padding: 5px 10px; }
+  .detail-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAdminModal()">✕</button>
+    <div class="modal-eyebrow">Restricted Access</div>
+    <div class="modal-title">Admin <em>Portal</em></div>
+    <p class="modal-desc">This area is restricted to Persefio team members only. Please enter your credentials to continue.</p>
+    <div class="modal-field">
+      <label>Username</label>
+      <input type="text" id="admin-username" placeholder="Enter username" autocomplete="off" onkeydown="if(event.key==='Enter')attemptLogin()" />
+    </div>
+    <div class="modal-field">
+      <label>Password</label>
+      <input type="password" id="admin-password" placeholder="Enter password" autocomplete="off" onkeydown="if(event.key==='Enter')attemptLogin()" />
+    </div>
+    <div class="modal-error" id="login-error">Incorrect credentials. Please try again.</div>
+    <div class="modal-actions">
+      <button class="btn-modal-login" onclick="attemptLogin()">Access Dashboard →</button>
+    </div>
+    <div class="modal-hint">For credential recovery, contact your Persefio administrator.</div>
+  </div>
+</div>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <div class="nav-logo" id="nav-logo-click">
+    Persefio<span>Acquisition</span>
+  </div>
+  <div id="nav-right" style="display:flex;align-items:center;gap:12px;">
+    <div id="admin-indicator" style="display:none;align-items:center;gap:10px;">
+      <span style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-dim);">Admin Mode</span>
+      <button class="admin-logout" onclick="adminLogout()">Sign Out</button>
+    </div>
+    <button id="admin-btn" onclick="openAdminModal()" style="font-family:'Jost',sans-serif;font-size:9px;font-weight:300;letter-spacing:0.18em;text-transform:uppercase;color:rgba(200,191,168,0.25);background:transparent;border:1px solid rgba(201,168,76,0.06);padding:8px 16px;cursor:pointer;transition:all 0.3s;border-radius:1px;" onmouseover="this.style.color='rgba(200,191,168,0.5)';this.style.borderColor='rgba(201,168,76,0.15)'" onmouseout="this.style.color='rgba(200,191,168,0.25)';this.style.borderColor='rgba(201,168,76,0.06)'">
+      Team Login
+    </button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-title" id="toast-title">Notice</div>
+  <div id="toast-msg">—</div>
+</div>
+
+<!-- ══════════════════════
+     CLIENT VIEW
+══════════════════════ -->
+<div class="view active" id="view-client">
+
+  <!-- Hero -->
+  <div class="client-hero">
+    <div class="client-hero-inner">
+      <div class="eyebrow">Role Acquisition Form</div>
+      <h1>Tell us the<br><em>role.</em></h1>
+      <p>We build the pipeline and deliver only verified candidates. This form gives us everything we need to launch your dedicated sourcing pipeline — precisely and without noise.</p>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-bar-wrap" id="progress-bar">
+    <div class="progress-step active" data-step="0">
+      <div class="step-dot">1</div>
+      <div class="step-label">Company</div>
+    </div>
+    <div class="progress-step" data-step="1">
+      <div class="step-dot">2</div>
+      <div class="step-label">Role Detail</div>
+    </div>
+    <div class="progress-step" data-step="2">
+      <div class="step-dot">3</div>
+      <div class="step-label">Requirements</div>
+    </div>
+    <div class="progress-step" data-step="3">
+      <div class="step-dot">4</div>
+      <div class="step-label">Plan</div>
+    </div>
+    <div class="progress-step" data-step="4">
+      <div class="step-dot">5</div>
+      <div class="step-label">Confirm</div>
+    </div>
+  </div>
+
+  <!-- Form Container -->
+  <div class="form-container">
+
+    <!-- ── STEP 1: COMPANY ── -->
+    <div class="form-section active" id="step-0">
+      <div class="section-heading">Your <em>Company</em></div>
+      <p class="section-sub">Basic information about your organisation — this helps us understand your hiring context.</p>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Company Name <span class="req">*</span></label>
+          <input type="text" id="company_name" placeholder="e.g. Acme Solutions Pvt. Ltd." />
+        </div>
+        <div class="field-group">
+          <label>Industry / Sector <span class="req">*</span></label>
+          <select id="company_industry">
+            <option value="">— Select Industry —</option>
+            <option>Technology & Software</option>
+            <option>Finance & Banking</option>
+            <option>Healthcare & Pharma</option>
+            <option>Manufacturing & Engineering</option>
+            <option>Retail & E-Commerce</option>
+            <option>Real Estate & Construction</option>
+            <option>Logistics & Supply Chain</option>
+            <option>Media & Entertainment</option>
+            <option>Education & EdTech</option>
+            <option>FMCG & Consumer Goods</option>
+            <option>Legal & Compliance</option>
+            <option>Consulting & Advisory</option>
+            <option>Hospitality & Travel</option>
+            <option>Non-Profit / NGO</option>
+            <option>Government & Public Sector</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row thirds">
+        <div class="field-group">
+          <label>Company Size</label>
+          <select id="company_size">
+            <option value="">— Size —</option>
+            <option>1–10 employees</option>
+            <option>11–50 employees</option>
+            <option>51–200 employees</option>
+            <option>201–500 employees</option>
+            <option>500–2000 employees</option>
+            <option>2000+ employees</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>City / Location <span class="req">*</span></label>
+          <input type="text" id="company_city" placeholder="e.g. Mumbai, Maharashtra" />
+        </div>
+        <div class="field-group">
+          <label>Website</label>
+          <input type="url" id="company_website" placeholder="https://" />
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <div class="section-heading" style="font-size:22px; margin-bottom:6px;">Point of <em>Contact</em></div>
+      <p class="section-sub">Who should we coordinate with for this role?</p>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" id="contact_name" placeholder="Your full name" />
+        </div>
+        <div class="field-group">
+          <label>Designation</label>
+          <input type="text" id="contact_designation" placeholder="e.g. HR Manager, Founder" />
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Email <span class="req">*</span></label>
+          <input type="email" id="contact_email" placeholder="you@company.com" />
+        </div>
+        <div class="field-group">
+          <label>WhatsApp / Phone <span class="req">*</span></label>
+          <input type="tel" id="contact_phone" placeholder="+91 9XXXXXXXXX" />
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <div></div>
+        <button class="btn-next" onclick="nextStep(0)">Role Detail</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: ROLE DETAIL ── -->
+    <div class="form-section" id="step-1">
+      <div class="section-heading">The <em>Role</em></div>
+      <p class="section-sub">Tell us exactly what you're hiring for. The more precise you are, the more precisely we source.</p>
+
+      <div class="info-box">
+        <div class="info-box-title">💡 Role Clarity = Faster Pipeline</div>
+        <p>A well-defined role title directly impacts candidate quality and sourcing speed. Start typing to see suggestions, or use the category filter below.</p>
+      </div>
+
+      <div class="field-row full" style="margin-bottom:12px;">
+        <div class="field-group">
+          <label>Filter by Category</label>
+          <div class="role-cat-chips" id="role-cats">
+            <button class="role-cat-chip active" onclick="filterCat('all', this)">All Roles</button>
+            <button class="role-cat-chip" onclick="filterCat('tech', this)">Technology</button>
+            <button class="role-cat-chip" onclick="filterCat('sales', this)">Sales & BD</button>
+            <button class="role-cat-chip" onclick="filterCat('ops', this)">Operations</button>
+            <button class="role-cat-chip" onclick="filterCat('finance', this)">Finance</button>
+            <button class="role-cat-chip" onclick="filterCat('hr', this)">HR</button>
+            <button class="role-cat-chip" onclick="filterCat('marketing', this)">Marketing</button>
+            <button class="role-cat-chip" onclick="filterCat('design', this)">Design</button>
+            <button class="role-cat-chip" onclick="filterCat('leadership', this)">Leadership</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-row full">
+        <div class="field-group role-suggest-wrap">
+          <label>Exact Role Title <span class="req">*</span></label>
+          <input type="text" id="role_title" placeholder="Type role title or select from suggestions..." autocomplete="off" oninput="onRoleInput()" onfocus="onRoleInput()" />
+          <div class="role-suggestions" id="role-suggestions"></div>
+          <div class="field-hint">You can type any custom role name — our suggestions are just a reference.</div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Department / Function <span class="req">*</span></label>
+          <select id="role_department">
+            <option value="">— Department —</option>
+            <option>Technology & Engineering</option>
+            <option>Product Management</option>
+            <option>Sales & Business Development</option>
+            <option>Marketing & Growth</option>
+            <option>Operations</option>
+            <option>Finance & Accounts</option>
+            <option>Human Resources</option>
+            <option>Customer Success</option>
+            <option>Design & Creative</option>
+            <option>Legal & Compliance</option>
+            <option>Supply Chain & Logistics</option>
+            <option>Data & Analytics</option>
+            <option>Admin & Facility</option>
+            <option>Executive / Leadership</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Seniority Level <span class="req">*</span></label>
+          <select id="role_seniority">
+            <option value="">— Level —</option>
+            <option>Entry Level (0–1 yr)</option>
+            <option>Junior (1–3 yrs)</option>
+            <option>Mid-Level (3–6 yrs)</option>
+            <option>Senior (6–10 yrs)</option>
+            <option>Lead / Principal (8–12 yrs)</option>
+            <option>Manager (5–10 yrs)</option>
+            <option>Senior Manager</option>
+            <option>Director</option>
+            <option>VP / Head of</option>
+            <option>C-Suite / Founder</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row thirds">
+        <div class="field-group">
+          <label>Employment Type <span class="req">*</span></label>
+          <select id="role_type">
+            <option value="">— Type —</option>
+            <option>Full-Time</option>
+            <option>Part-Time</option>
+            <option>Contract / Freelance</option>
+            <option>Internship</option>
+            <option>Retainer</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Work Mode <span class="req">*</span></label>
+          <select id="role_mode">
+            <option value="">— Mode —</option>
+            <option>On-Site (Full)</option>
+            <option>Hybrid</option>
+            <option>Remote (India)</option>
+            <option>Remote (Global)</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>No. of Openings</label>
+          <input type="number" id="role_openings" min="1" max="100" placeholder="1" />
+        </div>
+      </div>
+
+      <div class="field-row full">
+        <div class="field-group">
+          <label>Role Summary <span class="req">*</span></label>
+          <textarea id="role_summary" placeholder="Briefly describe what this person will do — key responsibilities, who they'll work with, and what success looks like in this role." style="min-height: 140px;"></textarea>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="prevStep(1)">← Back</button>
+        <button class="btn-next" onclick="nextStep(1)">Requirements</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: REQUIREMENTS ── -->
+    <div class="form-section" id="step-2">
+      <div class="section-heading">Candidate <em>Requirements</em></div>
+      <p class="section-sub">Define what the ideal candidate looks like — experience, skills, salary. This shapes our screening criteria.</p>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Minimum Experience <span class="req">*</span></label>
+          <select id="req_exp_min">
+            <option value="">— From —</option>
+            <option>Fresher (0 yrs)</option>
+            <option>6 months</option>
+            <option>1 year</option>
+            <option>2 years</option>
+            <option>3 years</option>
+            <option>4 years</option>
+            <option>5 years</option>
+            <option>6 years</option>
+            <option>8 years</option>
+            <option>10+ years</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Maximum Experience</label>
+          <select id="req_exp_max">
+            <option value="">— To —</option>
+            <option>1 year</option>
+            <option>2 years</option>
+            <option>3 years</option>
+            <option>5 years</option>
+            <option>7 years</option>
+            <option>10 years</option>
+            <option>15 years</option>
+            <option>Any</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row full">
+        <div class="field-group">
+          <label>Salary Range (Monthly CTC in ₹) <span class="req">*</span></label>
+          <div class="range-group">
+            <div class="range-values">
+              <div>
+                <div class="range-label">Minimum</div>
+                <div class="range-val" id="sal-min-display">₹15,000</div>
+              </div>
+              <div style="text-align:right">
+                <div class="range-label">Maximum</div>
+                <div class="range-val" id="sal-max-display">₹60,000</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+              <input type="range" id="sal_min" min="5000" max="500000" step="2500" value="15000" oninput="updateSalary('min')" style="flex:1; min-width:120px;" />
+              <input type="range" id="sal_max" min="5000" max="500000" step="2500" value="60000" oninput="updateSalary('max')" style="flex:1; min-width:120px;" />
+            </div>
+            <div class="field-hint">Or type exact values below if needed:</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <input type="number" id="sal_min_txt" placeholder="Min CTC" style="flex:1;min-width:120px;" oninput="document.getElementById('sal_min').value=this.value; updateSalary('min')" />
+              <input type="number" id="sal_max_txt" placeholder="Max CTC" style="flex:1;min-width:120px;" oninput="document.getElementById('sal_max').value=this.value; updateSalary('max')" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-row full">
+        <div class="field-group">
+          <label>Key Skills / Tools Required <span class="req">*</span></label>
+          <textarea id="req_skills" placeholder="List the primary skills, tools, or technologies required. E.g. — React, Node.js, SQL, Figma, Tally, SAP, etc." style="min-height:100px;"></textarea>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Education Requirement</label>
+          <select id="req_education">
+            <option value="">— Education —</option>
+            <option>No specific requirement</option>
+            <option>10th / Secondary</option>
+            <option>12th / Higher Secondary</option>
+            <option>Diploma</option>
+            <option>Graduate (Any)</option>
+            <option>Graduate (Specific Field)</option>
+            <option>Post Graduate / MBA</option>
+            <option>PhD / Doctorate</option>
+            <option>Professional Certification</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Notice Period Acceptable</label>
+          <select id="req_notice">
+            <option value="">— Notice Period —</option>
+            <option>Immediate / 0 days</option>
+            <option>Up to 15 days</option>
+            <option>Up to 30 days</option>
+            <option>Up to 45 days</option>
+            <option>Up to 60 days</option>
+            <option>Up to 90 days</option>
+            <option>Any</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row full">
+        <div class="field-group">
+          <label>Work Location / City for This Role</label>
+          <input type="text" id="req_location" placeholder="e.g. Bangalore, Karnataka — or Remote" />
+        </div>
+      </div>
+
+      <div class="field-row full">
+        <div class="field-group">
+          <label>Must-Have Criteria</label>
+          <textarea id="req_must" placeholder="Any absolute must-have: industry background, specific company type experience, certifications, language skills, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="field-row full">
+        <div class="field-group">
+          <label>Deal Breakers / What NOT to Send</label>
+          <textarea id="req_dealbreakers" placeholder="Tell us what profiles to avoid — helps us pre-filter more precisely."></textarea>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="prevStep(2)">← Back</button>
+        <button class="btn-next" onclick="nextStep(2)">Choose Plan</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 4: PLAN ── -->
+    <div class="form-section" id="step-3">
+      <div class="section-heading">Select Your <em>Plan</em></div>
+      <p class="section-sub">Each plan activates your role's dedicated sourcing pipeline. Activation is charged per role — you only pay per verified candidate beyond that.</p>
+
+      <div class="plan-picker" id="plan-picker">
+        <div class="plan-pick-card" onclick="selectPlan('starter', this)">
+          <div class="plan-pick-name">Starter</div>
+          <div class="plan-pick-price">₹3,000</div>
+          <div class="plan-pick-sub">Activation per role + ₹250 / verified candidate</div>
+          <div class="plan-pick-detail">
+            <span>First candidates in 10–12 working days</span>
+            <span>30-day replacement support</span>
+            <span>Live dashboard access</span>
+            <span>Basic role screening</span>
+          </div>
+        </div>
+
+        <div class="plan-pick-card" onclick="selectPlan('growth', this)">
+          <div class="plan-badge-pick">Popular</div>
+          <div class="plan-pick-name">Growth</div>
+          <div class="plan-pick-price">₹5,000</div>
+          <div class="plan-pick-sub">Activation per role + ₹220 / verified candidate</div>
+          <div class="plan-pick-detail">
+            <span>First candidates in 7–9 working days</span>
+            <span>45-day replacement support</span>
+            <span>Live dashboard access</span>
+            <span>Priority screening</span>
+          </div>
+        </div>
+
+        <div class="plan-pick-card" onclick="selectPlan('scale', this)">
+          <div class="plan-pick-name">Scale</div>
+          <div class="plan-pick-price">₹8,000</div>
+          <div class="plan-pick-sub">Activation per role + ₹180 / verified candidate</div>
+          <div class="plan-pick-detail">
+            <span>First candidates in 3–5 working days</span>
+            <span>60-day replacement support</span>
+            <span>Lower per-candidate cost</span>
+            <span>Live dashboard access</span>
+          </div>
+        </div>
+
+        <div class="plan-pick-card" onclick="selectPlan('express', this)" style="border-color: rgba(201,168,76,0.2);">
+          <div class="plan-pick-name" style="color: var(--gold-light);">⚡ Express</div>
+          <div class="plan-pick-price">₹12,000</div>
+          <div class="plan-pick-sub">Activation per role + ₹250 / verified candidate</div>
+          <div class="plan-pick-detail">
+            <span>First candidates in 36–48 hours</span>
+            <span>60–90 day replacement support</span>
+            <span>Maximum responsiveness</span>
+            <span>Critical hire priority</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <div class="section-heading" style="font-size:22px; margin-bottom:6px;">Add <em>Continuity?</em></div>
+      <p class="section-sub" style="margin-bottom:20px;">Optional annual coverage that auto-restarts sourcing if the hired candidate leaves.</p>
+
+      <div class="pill-group">
+        <div class="pill-option">
+          <input type="radio" name="subscription" id="sub-none" value="none" checked />
+          <label for="sub-none">No Subscription</label>
+        </div>
+        <div class="pill-option">
+          <input type="radio" name="subscription" id="sub-role" value="role_replacement" />
+          <label for="sub-role">Role Replacement — ₹4,999/role/yr</label>
+        </div>
+        <div class="pill-option">
+          <input type="radio" name="subscription" id="sub-priority" value="priority_replacement" />
+          <label for="sub-priority">Priority Replacement — ₹9,999/role/yr</label>
+        </div>
+        <div class="pill-option">
+          <input type="radio" name="subscription" id="sub-corp" value="corporate" />
+          <label for="sub-corp">Corporate Plan — Custom Quote</label>
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <div class="field-row full">
+        <div class="field-group">
+          <label>Urgency / Target Date to Fill</label>
+          <input type="text" id="role_urgency" placeholder="e.g. Within 2 weeks, By 1 May, No strict deadline" />
+        </div>
+      </div>
+
+      <div class="field-row full">
+        <div class="field-group">
+          <label>Additional Notes for Persefio</label>
+          <textarea id="role_notes" placeholder="Anything else we should know — specific preferences, past sourcing issues, confidentiality needs, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="prevStep(3)">← Back</button>
+        <button class="btn-next" onclick="nextStep(3)">Review & Submit</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 5: REVIEW ── -->
+    <div class="form-section" id="step-4">
+      <div class="section-heading">Review & <em>Confirm</em></div>
+      <p class="section-sub">Please review your submission before sending. Once confirmed, our team begins pipeline activation within one business day.</p>
+
+      <div id="review-content" style="display:flex; flex-direction:column; gap:20px;">
+        <!-- dynamically populated -->
+      </div>
+
+      <div class="form-divider"></div>
+
+      <div class="info-box">
+        <div class="info-box-title">✓ What Happens Next</div>
+        <p>Our team reviews your brief, builds your candidate pipeline, and begins outreach. First verified candidates flow in as per your chosen plan's timeline. You only pay per verified candidate delivered.</p>
+      </div>
+
+      <div class="form-nav">
+        <button class="btn-back" onclick="prevStep(4)">← Edit Details</button>
+        <button class="btn-submit" onclick="submitForm()">Submit Acquisition Brief →</button>
+      </div>
+    </div>
+
+  </div><!-- /form-container -->
+
+  <!-- Success -->
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon">✦</div>
+    <h2>Thank <em>You.</em></h2>
+    <p>Your role acquisition brief has been received. We appreciate you trusting Persefio with this mandate — our team will now take it forward with full attention.</p>
+    <p style="margin-top:8px;">Expect a confirmation call or WhatsApp message from us shortly. We'll personally walk you through the next steps.</p>
+
+    <div style="margin-top:40px;background:var(--dark-3);border:1px solid var(--border);padding:32px;max-width:560px;width:100%;text-align:left;position:relative;">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,var(--gold),transparent);"></div>
+      <div style="font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;font-weight:400;">What Happens Next</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:16px;align-items:flex-start;font-size:13px;color:var(--cream-dim);line-height:1.7;">
+          <span style="color:var(--gold);font-size:11px;font-weight:500;flex-shrink:0;margin-top:2px;letter-spacing:0.1em;">01</span>
+          <span>Our team reviews your brief and reaches out over call or WhatsApp to confirm — usually within a few hours.</span>
+        </div>
+        <div style="height:1px;background:var(--border-dim);"></div>
+        <div style="display:flex;gap:16px;align-items:flex-start;font-size:13px;color:var(--cream-dim);line-height:1.7;">
+          <span style="color:var(--gold);font-size:11px;font-weight:500;flex-shrink:0;margin-top:2px;letter-spacing:0.1em;">02</span>
+          <span>Your dedicated sourcing pipeline activates. We begin identifying and screening relevant candidates immediately.</span>
+        </div>
+        <div style="height:1px;background:var(--border-dim);"></div>
+        <div style="display:flex;gap:16px;align-items:flex-start;font-size:13px;color:var(--cream-dim);line-height:1.7;">
+          <span style="color:var(--gold);font-size:11px;font-weight:500;flex-shrink:0;margin-top:2px;letter-spacing:0.1em;">03</span>
+          <span>Verified candidates are delivered to you as per your chosen plan's timeline. You review, shortlist, and hire — we handle everything else.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;max-width:560px;width:100%;background:var(--gold-faint);border:1px solid var(--border);padding:20px 24px;text-align:center;">
+      <div style="font-size:12px;color:var(--cream-dim);line-height:1.8;">
+        Questions? Reach us anytime at <strong style="color:var(--gold);">hello@persefio.com</strong> or reply to the WhatsApp message you'll receive shortly.
+      </div>
+    </div>
+
+    <div class="success-id" id="success-id-display" style="margin-top:28px;">Ref ID: —</div>
+  </div>
+
+</div><!-- /view-client -->
+
+<!-- ══════════════════════
+     ADMIN VIEW
+══════════════════════ -->
+<div class="view" id="view-admin">
+
+  <div class="admin-header">
+    <div>
+      <div class="admin-title">
+        <span>Admin Panel</span>
+        Pipeline <em>Overview</em>
+      </div>
+    </div>
+    <div class="admin-stats" id="admin-stats">
+      <div class="admin-stat">
+        <span class="stat-num" id="stat-total">0</span>
+        <span class="stat-lbl">Total</span>
+      </div>
+      <div class="admin-stat">
+        <span class="stat-num" id="stat-new">0</span>
+        <span class="stat-lbl">New</span>
+      </div>
+      <div class="admin-stat">
+        <span class="stat-num" id="stat-active">0</span>
+        <span class="stat-lbl">Active</span>
+      </div>
+      <div class="admin-stat">
+        <span class="stat-num" id="stat-express">0</span>
+        <span class="stat-lbl">Express</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-toolbar">
+    <div class="search-input-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" placeholder="Search by company, role, contact..." oninput="filterAdmin()" id="admin-search" />
+    </div>
+    <select class="filter-select" id="filter-status" onchange="filterAdmin()">
+      <option value="">All Statuses</option>
+      <option value="new">New</option>
+      <option value="review">In Review</option>
+      <option value="active">Active</option>
+      <option value="closed">Closed</option>
+    </select>
+    <select class="filter-select" id="filter-plan" onchange="filterAdmin()">
+      <option value="">All Plans</option>
+      <option value="express">Express</option>
+      <option value="scale">Scale</option>
+      <option value="growth">Growth</option>
+      <option value="starter">Starter</option>
+    </select>
+    <button class="admin-refresh" onclick="renderAdminList()">↺ Refresh</button>
+  </div>
+
+  <div class="admin-body">
+    <div class="admin-list-col" id="admin-list">
+      <div class="empty-list">
+        <div style="font-size:28px;opacity:0.3;">◈</div>
+        <div style="font-size:12px;margin-top:12px;letter-spacing:0.1em;">No submissions yet.<br>Client briefs will appear here.</div>
+      </div>
+    </div>
+    <div class="admin-detail-col" id="admin-detail">
+      <div class="empty-detail">
+        <div class="empty-detail-icon">◈</div>
+        <div class="empty-detail-text">Select a submission<br>to view full details.</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /view-admin -->
+
+<script>
+// ══════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════
+
+const ROLE_DB = [
+  { name: 'Software Engineer', cat: 'tech' },
+  { name: 'Frontend Developer', cat: 'tech' },
+  { name: 'Backend Developer', cat: 'tech' },
+  { name: 'Full Stack Developer', cat: 'tech' },
+  { name: 'React Developer', cat: 'tech' },
+  { name: 'Node.js Developer', cat: 'tech' },
+  { name: 'Python Developer', cat: 'tech' },
+  { name: 'DevOps Engineer', cat: 'tech' },
+  { name: 'Mobile Developer (iOS)', cat: 'tech' },
+  { name: 'Mobile Developer (Android)', cat: 'tech' },
+  { name: 'Data Scientist', cat: 'tech' },
+  { name: 'Data Analyst', cat: 'tech' },
+  { name: 'Machine Learning Engineer', cat: 'tech' },
+  { name: 'QA / Test Engineer', cat: 'tech' },
+  { name: 'Cloud Architect', cat: 'tech' },
+  { name: 'Cybersecurity Analyst', cat: 'tech' },
+  { name: 'Database Administrator', cat: 'tech' },
+  { name: 'Technical Product Manager', cat: 'tech' },
+  { name: 'IT Support Engineer', cat: 'tech' },
+  { name: 'Network Engineer', cat: 'tech' },
+  { name: 'Sales Executive', cat: 'sales' },
+  { name: 'Business Development Manager', cat: 'sales' },
+  { name: 'Account Manager', cat: 'sales' },
+  { name: 'Inside Sales Representative', cat: 'sales' },
+  { name: 'Sales Head / VP Sales', cat: 'sales' },
+  { name: 'Enterprise Sales Manager', cat: 'sales' },
+  { name: 'Pre-Sales Consultant', cat: 'sales' },
+  { name: 'Key Account Executive', cat: 'sales' },
+  { name: 'Channel Sales Manager', cat: 'sales' },
+  { name: 'Sales Trainer', cat: 'sales' },
+  { name: 'Operations Manager', cat: 'ops' },
+  { name: 'Operations Executive', cat: 'ops' },
+  { name: 'Supply Chain Manager', cat: 'ops' },
+  { name: 'Logistics Coordinator', cat: 'ops' },
+  { name: 'Warehouse Manager', cat: 'ops' },
+  { name: 'Project Manager', cat: 'ops' },
+  { name: 'Process Excellence Analyst', cat: 'ops' },
+  { name: 'Customer Support Executive', cat: 'ops' },
+  { name: 'Customer Success Manager', cat: 'ops' },
+  { name: 'Quality Assurance Manager', cat: 'ops' },
+  { name: 'Chartered Accountant', cat: 'finance' },
+  { name: 'Finance Manager', cat: 'finance' },
+  { name: 'Accountant', cat: 'finance' },
+  { name: 'Financial Analyst', cat: 'finance' },
+  { name: 'CFO / VP Finance', cat: 'finance' },
+  { name: 'Audit Manager', cat: 'finance' },
+  { name: 'Taxation Specialist', cat: 'finance' },
+  { name: 'Cost Accountant', cat: 'finance' },
+  { name: 'Payroll Specialist', cat: 'finance' },
+  { name: 'Credit Analyst', cat: 'finance' },
+  { name: 'HR Executive', cat: 'hr' },
+  { name: 'HR Manager', cat: 'hr' },
+  { name: 'Talent Acquisition Specialist', cat: 'hr' },
+  { name: 'HRBP (HR Business Partner)', cat: 'hr' },
+  { name: 'L&D Manager', cat: 'hr' },
+  { name: 'Compensation & Benefits Analyst', cat: 'hr' },
+  { name: 'HR Head / CHRO', cat: 'hr' },
+  { name: 'Recruiter', cat: 'hr' },
+  { name: 'Digital Marketing Executive', cat: 'marketing' },
+  { name: 'SEO Specialist', cat: 'marketing' },
+  { name: 'Content Writer', cat: 'marketing' },
+  { name: 'Social Media Manager', cat: 'marketing' },
+  { name: 'Performance Marketing Manager', cat: 'marketing' },
+  { name: 'Brand Manager', cat: 'marketing' },
+  { name: 'Marketing Head / CMO', cat: 'marketing' },
+  { name: 'Email Marketing Specialist', cat: 'marketing' },
+  { name: 'Growth Hacker', cat: 'marketing' },
+  { name: 'UI/UX Designer', cat: 'design' },
+  { name: 'Graphic Designer', cat: 'design' },
+  { name: 'Product Designer', cat: 'design' },
+  { name: 'Motion Designer', cat: 'design' },
+  { name: 'Brand Designer', cat: 'design' },
+  { name: 'Visual Designer', cat: 'design' },
+  { name: '3D Artist', cat: 'design' },
+  { name: 'CEO / Co-Founder', cat: 'leadership' },
+  { name: 'COO', cat: 'leadership' },
+  { name: 'CTO', cat: 'leadership' },
+  { name: 'General Manager', cat: 'leadership' },
+  { name: 'VP / Director of Product', cat: 'leadership' },
+  { name: 'Head of Engineering', cat: 'leadership' },
+  { name: 'Head of Growth', cat: 'leadership' },
+];
+
+let currentCat = 'all';
+let currentStep = 0;
+let selectedPlan = null;
+let submissions = [];
+let selectedSubmission = null;
+let isAdminLoggedIn = false;
+
+// ══════════════════════════════════════════
+//  ADMIN LOGIN
+// ══════════════════════════════════════════
+
+const ADMIN_USER = 'persefio';
+const ADMIN_PASS = 'pipeline2024';
+
+function openAdminModal() {
+  if (isAdminLoggedIn) { switchToAdmin(); return; }
+  document.getElementById('admin-modal').classList.add('open');
+  document.getElementById('admin-username').value = '';
+  document.getElementById('admin-password').value = '';
+  document.getElementById('login-error').classList.remove('show');
+  setTimeout(() => document.getElementById('admin-username').focus(), 100);
+}
+
+function closeAdminModal() {
+  document.getElementById('admin-modal').classList.remove('open');
+}
+
+function attemptLogin() {
+  const u = document.getElementById('admin-username').value.trim();
+  const p = document.getElementById('admin-password').value.trim();
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    isAdminLoggedIn = true;
+    closeAdminModal();
+    switchToAdmin();
+    document.getElementById('admin-indicator').style.display = 'flex';
+    document.getElementById('admin-btn').style.display = 'none';
+    showToast('Welcome', 'Admin access granted. Pipeline overview loaded.');
+  } else {
+    document.getElementById('login-error').classList.add('show');
+    document.getElementById('admin-password').value = '';
+    document.getElementById('admin-password').focus();
+  }
+}
+
+function switchToAdmin() {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-admin').classList.add('active');
+  renderAdminList();
+}
+
+function adminLogout() {
+  isAdminLoggedIn = false;
+  document.getElementById('admin-indicator').style.display = 'none';
+  document.getElementById('admin-btn').style.display = 'block';
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-client').classList.add('active');
+  showToast('Signed Out', 'Admin session ended.');
+}
+
+document.getElementById('admin-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeAdminModal();
+});
+
+// ══════════════════════════════════════════
+//  ROLE SUGGESTIONS
+// ══════════════════════════════════════════
+
+function filterCat(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.role-cat-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  onRoleInput();
+}
+
+function onRoleInput() {
+  const val = document.getElementById('role_title').value.toLowerCase();
+  const box = document.getElementById('role-suggestions');
+  const filtered = ROLE_DB.filter(r => {
+    const catMatch = currentCat === 'all' || r.cat === currentCat;
+    const textMatch = val.length === 0 || r.name.toLowerCase().includes(val);
+    return catMatch && textMatch;
+  }).slice(0, 12);
+
+  if (filtered.length === 0) { box.classList.remove('open'); return; }
+
+  box.innerHTML = filtered.map(r => `
+    <div class="role-suggest-item" onclick="selectRole('${r.name}')">
+      <div class="suggest-role-name">${r.name}</div>
+      <div class="suggest-role-cat">${r.cat.charAt(0).toUpperCase() + r.cat.slice(1)}</div>
+    </div>
+  `).join('');
+  box.classList.add('open');
+}
+
+function selectRole(name) {
+  document.getElementById('role_title').value = name;
+  document.getElementById('role-suggestions').classList.remove('open');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.role-suggest-wrap')) {
+    document.getElementById('role-suggestions').classList.remove('open');
+  }
+});
+
+document.getElementById('role-suggestions').addEventListener('touchstart', function(e) {
+  const item = e.target.closest('.role-suggest-item');
+  if (item) {
+    e.preventDefault();
+    const name = item.querySelector('.suggest-role-name').textContent;
+    selectRole(name);
+  }
+}, { passive: false });
+
+// ══════════════════════════════════════════
+//  SALARY RANGE
+// ══════════════════════════════════════════
+
+function updateSalary(which) {
+  const minEl = document.getElementById('sal_min');
+  const maxEl = document.getElementById('sal_max');
+
+  let min = parseInt(minEl.value);
+  let max = parseInt(maxEl.value);
+
+  if (which === 'min' && min > max) { min = max - 2500; minEl.value = min; }
+  if (which === 'max' && max < min) { max = min + 2500; maxEl.value = max; }
+
+  document.getElementById('sal-min-display').textContent = '₹' + min.toLocaleString('en-IN');
+  document.getElementById('sal-max-display').textContent = '₹' + max.toLocaleString('en-IN');
+
+  minEl.style.setProperty('--val', ((min - 5000) / (500000 - 5000) * 100) + '%');
+  maxEl.style.setProperty('--val', ((max - 5000) / (500000 - 5000) * 100) + '%');
+}
+
+// ══════════════════════════════════════════
+//  PLAN SELECTION
+// ══════════════════════════════════════════
+
+function selectPlan(plan, el) {
+  selectedPlan = plan;
+  document.querySelectorAll('.plan-pick-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ══════════════════════════════════════════
+//  STEP NAVIGATION
+// ══════════════════════════════════════════
+
+function nextStep(from) {
+  if (!validateStep(from)) return;
+  if (from === 3) buildReview();
+  goToStep(from + 1);
+}
+
+function prevStep(from) { goToStep(from - 1); }
+
+function goToStep(n) {
+  document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('step-' + n).classList.add('active');
+
+  const steps = document.querySelectorAll('.progress-step');
+  steps.forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i < n) s.classList.add('done');
+    else if (i === n) s.classList.add('active');
+  });
+
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function validateStep(step) {
+  const required = {
+    0: ['company_name', 'company_industry', 'company_city', 'contact_name', 'contact_email', 'contact_phone'],
+    1: ['role_title', 'role_department', 'role_seniority', 'role_type', 'role_mode', 'role_summary'],
+    2: ['req_exp_min', 'req_skills'],
+    3: [],
+  };
+
+  const fields = required[step] || [];
+  let valid = true;
+
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const val = el.value.trim();
+    if (!val) {
+      el.style.borderColor = 'var(--red)';
+      valid = false;
+      setTimeout(() => { el.style.borderColor = ''; }, 3000);
+    }
+  });
+
+  if (step === 3 && !selectedPlan) {
+    showToast('Plan Required', 'Please select a hiring plan to continue.');
+    return false;
+  }
+
+  if (!valid) { showToast('Missing Fields', 'Please fill in all required fields.'); }
+  return valid;
+}
+
+// ══════════════════════════════════════════
+//  REVIEW BUILD
+// ══════════════════════════════════════════
+
+function g(id) { const el = document.getElementById(id); return el ? el.value.trim() : '—'; }
+
+function buildReview() {
+  const sub = collectFormData();
+  const rc = document.getElementById('review-content');
+
+  rc.innerHTML = `
+    ${reviewBlock('Company', [
+      ['Company', sub.company_name],
+      ['Industry', sub.company_industry],
+      ['Size', sub.company_size],
+      ['City', sub.company_city],
+      ['Website', sub.company_website || '—'],
+    ])}
+    ${reviewBlock('Contact', [
+      ['Name', sub.contact_name],
+      ['Designation', sub.contact_designation || '—'],
+      ['Email', sub.contact_email],
+      ['Phone', sub.contact_phone],
+    ])}
+    ${reviewBlock('Role', [
+      ['Title', sub.role_title],
+      ['Department', sub.role_department],
+      ['Seniority', sub.role_seniority],
+      ['Type / Mode', sub.role_type + ' · ' + sub.role_mode],
+      ['Openings', sub.role_openings || '1'],
+      ['Summary', sub.role_summary],
+    ])}
+    ${reviewBlock('Requirements', [
+      ['Experience', sub.req_exp_min + (sub.req_exp_max ? ' – ' + sub.req_exp_max : '')],
+      ['Salary Range', sub.salary_display],
+      ['Skills', sub.req_skills],
+      ['Education', sub.req_education || '—'],
+      ['Notice Period', sub.req_notice || '—'],
+      ['Location', sub.req_location || '—'],
+      ['Must-Have', sub.req_must || '—'],
+      ['Deal Breakers', sub.req_dealbreakers || '—'],
+    ])}
+    ${reviewBlock('Plan & Extras', [
+      ['Selected Plan', sub.plan.toUpperCase()],
+      ['Subscription', sub.subscription],
+      ['Target Timeline', sub.role_urgency || '—'],
+      ['Extra Notes', sub.role_notes || '—'],
+    ])}
+  `;
+}
+
+function reviewBlock(title, rows) {
+  return `
+    <div style="background:var(--dark-3);border:1px solid var(--border-dim);padding:20px 24px;">
+      <div style="font-size:9px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;font-weight:400;">${title}</div>
+      <div class="review-grid">
+        ${rows.map(([k,v]) => `
+          <div>
+            <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--cream-dim);opacity:0.5;margin-bottom:2px;">${k}</div>
+            <div style="font-size:13px;color:var(--cream);line-height:1.5;">${v || '—'}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════
+//  COLLECT & SUBMIT
+// ══════════════════════════════════════════
+
+function collectFormData() {
+  const subEl = document.querySelector('input[name="subscription"]:checked');
+  const salMin = parseInt(document.getElementById('sal_min').value);
+  const salMax = parseInt(document.getElementById('sal_max').value);
+  return {
+    id: 'PRF-' + Date.now().toString(36).toUpperCase(),
+    submitted_at: new Date().toISOString(),
+    status: 'new',
+    company_name: g('company_name'),
+    company_industry: g('company_industry'),
+    company_size: g('company_size'),
+    company_city: g('company_city'),
+    company_website: g('company_website'),
+    contact_name: g('contact_name'),
+    contact_designation: g('contact_designation'),
+    contact_email: g('contact_email'),
+    contact_phone: g('contact_phone'),
+    role_title: g('role_title'),
+    role_department: g('role_department'),
+    role_seniority: g('role_seniority'),
+    role_type: g('role_type'),
+    role_mode: g('role_mode'),
+    role_openings: g('role_openings') || '1',
+    role_summary: g('role_summary'),
+    req_exp_min: g('req_exp_min'),
+    req_exp_max: g('req_exp_max'),
+    sal_min: salMin,
+    sal_max: salMax,
+    salary_display: '₹' + salMin.toLocaleString('en-IN') + ' – ₹' + salMax.toLocaleString('en-IN'),
+    req_skills: g('req_skills'),
+    req_education: g('req_education'),
+    req_notice: g('req_notice'),
+    req_location: g('req_location'),
+    req_must: g('req_must'),
+    req_dealbreakers: g('req_dealbreakers'),
+    plan: selectedPlan || 'growth',
+    subscription: subEl ? subEl.value : 'none',
+    role_urgency: g('role_urgency'),
+    role_notes: g('role_notes'),
+    admin_notes: '',
+  };
+}
+
+function submitForm() {
+  const data = collectFormData();
+  submissions.unshift(data);
+
+  document.getElementById('success-id-display').textContent = 'Ref ID: ' + data.id;
+
+  document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('success-screen').classList.add('active');
+  document.getElementById('progress-bar').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('Brief Submitted', 'Ref ' + data.id + ' · Pipeline activating');
+}
+
+function updateBadge() { /* internal only */ }
+
+// ══════════════════════════════════════════
+//  ADMIN
+// ══════════════════════════════════════════
+
+const PLAN_DOT = { express: 'p-express', scale: 'p-scale', growth: 'p-growth', starter: 'p-starter' };
+const STATUS_CLASS = { new: 'status-new', review: 'status-review', active: 'status-active', closed: 'status-closed' };
+
+function renderAdminList() {
+  updateAdminStats();
+  filterAdmin();
+}
+
+function filterAdmin() {
+  const search = (document.getElementById('admin-search')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('filter-status')?.value || '';
+  const planFilter = document.getElementById('filter-plan')?.value || '';
+
+  const filtered = submissions.filter(s => {
+    const matchSearch = !search || [s.company_name, s.role_title, s.contact_name, s.contact_email].some(v => v.toLowerCase().includes(search));
+    const matchStatus = !statusFilter || s.status === statusFilter;
+    const matchPlan = !planFilter || s.plan === planFilter;
+    return matchSearch && matchStatus && matchPlan;
+  });
+
+  const list = document.getElementById('admin-list');
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-list">
+      <div style="font-size:24px;opacity:0.3;">◈</div>
+      <div style="font-size:12px;margin-top:12px;letter-spacing:0.1em;">${submissions.length === 0 ? 'No submissions yet.' : 'No results for these filters.'}</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => `
+    <div class="submission-item ${selectedSubmission === s.id ? 'selected' : ''}" onclick="viewSubmission('${s.id}')">
+      <div>
+        <div class="sub-company">${s.company_name}</div>
+        <div class="sub-role">${s.role_title}</div>
+        <div class="sub-meta">
+          <span><span class="priority-dot ${PLAN_DOT[s.plan] || ''}"></span> ${s.plan.charAt(0).toUpperCase() + s.plan.slice(1)}</span>
+          <span>📍 ${s.company_city}</span>
+          <span>👤 ${s.contact_name}</span>
+        </div>
+        <div class="sub-plan-tag">${s.salary_display}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+        <span class="status-badge ${STATUS_CLASS[s.status] || 'status-new'}">${s.status}</span>
+        <span class="sub-time">${formatTime(s.submitted_at)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function viewSubmission(id) {
+  const s = submissions.find(s => s.id === id);
+  if (!s) return;
+  selectedSubmission = id;
+  filterAdmin();
+
+  const detail = document.getElementById('admin-detail');
+  detail.innerHTML = `
+    <div class="detail-header">
+      <div>
+        <div class="detail-company">${s.id} · ${s.company_industry}</div>
+        <div class="detail-title"><em>${s.role_title}</em></div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-top:4px;">${s.company_name}</div>
+      </div>
+      <div class="status-changer">
+        <select class="filter-select" onchange="changeStatus('${s.id}', this.value)" style="min-width:120px;">
+          ${['new','review','active','closed'].map(st => `<option value="${st}" ${s.status===st?'selected':''}>${st.charAt(0).toUpperCase()+st.slice(1)}</option>`).join('')}
+        </select>
+        <span class="status-badge ${STATUS_CLASS[s.status]}">${s.status}</span>
+      </div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section">
+        <div class="detail-section-title">Company & Contact</div>
+        <div class="detail-grid">
+          <div class="detail-field"><div class="detail-field-label">Company</div><div class="detail-field-value">${s.company_name}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Industry</div><div class="detail-field-value">${s.company_industry}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Size</div><div class="detail-field-value">${s.company_size || '—'}</div></div>
+          <div class="detail-field"><div class="detail-field-label">City</div><div class="detail-field-value">${s.company_city}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Contact</div><div class="detail-field-value">${s.contact_name}${s.contact_designation ? ' · ' + s.contact_designation : ''}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Phone / Email</div><div class="detail-field-value">${s.contact_phone}<br>${s.contact_email}</div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Role Information</div>
+        <div class="detail-field"><div class="detail-field-label">Exact Role</div><div class="detail-field-value highlight">${s.role_title}</div></div>
+        <div class="detail-grid">
+          <div class="detail-field"><div class="detail-field-label">Department</div><div class="detail-field-value">${s.role_department}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Seniority</div><div class="detail-field-value">${s.role_seniority}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Type</div><div class="detail-field-value">${s.role_type}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Mode</div><div class="detail-field-value">${s.role_mode}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Openings</div><div class="detail-field-value">${s.role_openings}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Work Location</div><div class="detail-field-value">${s.req_location || '—'}</div></div>
+        </div>
+        <div class="detail-field" style="margin-top:8px;"><div class="detail-field-label">Role Summary</div><div class="detail-field-value" style="line-height:1.7;">${s.role_summary}</div></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Candidate Requirements</div>
+        <div class="detail-grid">
+          <div class="detail-field"><div class="detail-field-label">Experience</div><div class="detail-field-value highlight">${s.req_exp_min}${s.req_exp_max ? ' – ' + s.req_exp_max : ''}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Salary Range</div><div class="detail-field-value highlight">${s.salary_display} / mo</div></div>
+          <div class="detail-field"><div class="detail-field-label">Education</div><div class="detail-field-value">${s.req_education || '—'}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Notice Period</div><div class="detail-field-value">${s.req_notice || '—'}</div></div>
+        </div>
+        <div class="detail-field" style="margin-top:8px;"><div class="detail-field-label">Key Skills</div><div class="detail-field-value">${s.req_skills}</div></div>
+        <div class="detail-field"><div class="detail-field-label">Must-Have</div><div class="detail-field-value">${s.req_must || '—'}</div></div>
+        <div class="detail-field"><div class="detail-field-label">Deal Breakers</div><div class="detail-field-value">${s.req_dealbreakers || '—'}</div></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Plan & Timeline</div>
+        <div class="detail-grid">
+          <div class="detail-field"><div class="detail-field-label">Plan</div><div class="detail-field-value highlight">${s.plan.toUpperCase()}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Subscription</div><div class="detail-field-value">${s.subscription}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Target Timeline</div><div class="detail-field-value">${s.role_urgency || '—'}</div></div>
+          <div class="detail-field"><div class="detail-field-label">Submitted</div><div class="detail-field-value">${new Date(s.submitted_at).toLocaleString()}</div></div>
+        </div>
+        ${s.role_notes ? `<div class="detail-field"><div class="detail-field-label">Client Notes</div><div class="detail-field-value">${s.role_notes}</div></div>` : ''}
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Admin Notes</div>
+        <textarea class="admin-note-area" id="note-${s.id}" placeholder="Add internal notes, action items, sourcing status...">${s.admin_notes || ''}</textarea>
+        <div class="detail-actions">
+          <button class="detail-btn detail-btn-gold" onclick="saveNote('${s.id}')">Save Note</button>
+          <button class="detail-btn detail-btn-outline" onclick="copyContact('${s.id}')">Copy Contact</button>
+          <button class="detail-btn detail-btn-outline" onclick="exportSubmission('${s.id}')">Export JSON</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function changeStatus(id, newStatus) {
+  const s = submissions.find(s => s.id === id);
+  if (s) { s.status = newStatus; updateAdminStats(); viewSubmission(id); filterAdmin(); }
+}
+
+function saveNote(id) {
+  const s = submissions.find(s => s.id === id);
+  if (s) {
+    s.admin_notes = document.getElementById('note-' + id).value;
+    showToast('Saved', 'Admin note saved for ' + s.company_name);
+  }
+}
+
+function copyContact(id) {
+  const s = submissions.find(s => s.id === id);
+  if (s) {
+    const text = `${s.contact_name} · ${s.contact_designation || ''}\n${s.contact_email}\n${s.contact_phone}\n${s.company_name}`;
+    navigator.clipboard.writeText(text).then(() => showToast('Copied', 'Contact details copied to clipboard.'));
+  }
+}
+
+function exportSubmission(id) {
+  const s = submissions.find(s => s.id === id);
+  if (s) {
+    const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'persefio-' + s.id + '.json'; a.click();
+  }
+}
+
+function updateAdminStats() {
+  document.getElementById('stat-total').textContent = submissions.length;
+  document.getElementById('stat-new').textContent = submissions.filter(s => s.status === 'new').length;
+  document.getElementById('stat-active').textContent = submissions.filter(s => s.status === 'active').length;
+  document.getElementById('stat-express').textContent = submissions.filter(s => s.plan === 'express').length;
+}
+
+function formatTime(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 60000);
+  if (diff < 1) return 'just now';
+  if (diff < 60) return diff + 'm ago';
+  if (diff < 1440) return Math.floor(diff / 60) + 'h ago';
+  return d.toLocaleDateString();
+}
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+
+let toastTimeout;
+function showToast(title, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
