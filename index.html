@@ -1190,8 +1190,53 @@ input[type="range"]::-webkit-slider-thumb {
   opacity: 0.4;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
+/* Mobile Detail Overlay */
+.mobile-detail-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  background: var(--dark-2);
+  overflow-y: auto;
+  padding-top: 0;
+}
+
+.mobile-detail-overlay.open { display: block; }
+
+.mobile-detail-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--dark-3);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-detail-back {
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-detail-back:before { content: '←'; font-size: 14px; }
+
+@media (min-width: 901px) {
+  .mobile-detail-overlay { display: none !important; }
+}
+
+
 ::-webkit-scrollbar-track { background: var(--dark-2); }
 ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
 
@@ -1872,7 +1917,7 @@ input[type="range"]::-webkit-slider-thumb {
 
     <div style="margin-top:24px;max-width:560px;width:100%;background:var(--gold-faint);border:1px solid var(--border);padding:20px 24px;text-align:center;">
       <div style="font-size:12px;color:var(--cream-dim);line-height:1.8;">
-        Questions? Reach us anytime at <strong style="color:var(--gold);">hello@persefio.com</strong> or reply to the WhatsApp message you'll receive shortly.
+        Questions? Reach us anytime at <strong style="color:var(--gold);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="254d4049494a655540575640434c4a0b464a48">[email&#160;protected]</a></strong> or reply to the WhatsApp message you'll receive shortly.
       </div>
     </div>
 
@@ -1880,6 +1925,15 @@ input[type="range"]::-webkit-slider-thumb {
   </div>
 
 </div><!-- /view-client -->
+
+<!-- MOBILE DETAIL OVERLAY -->
+<div class="mobile-detail-overlay" id="mobile-detail-overlay">
+  <div class="mobile-detail-bar">
+    <button class="mobile-detail-back" onclick="closeMobileDetail()">Back to List</button>
+    <span style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-dim);">Role Details</span>
+  </div>
+  <div id="mobile-detail-content"></div>
+</div>
 
 <!-- ══════════════════════
      ADMIN VIEW
@@ -1952,7 +2006,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 </div><!-- /view-admin -->
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ══════════════════════════════════════════
 //  DATA
 // ══════════════════════════════════════════
@@ -2361,6 +2415,7 @@ function collectFormData() {
 function submitForm() {
   const data = collectFormData();
   submissions.unshift(data);
+  saveSubmissions();
 
   document.getElementById('success-id-display').textContent = 'Ref ID: ' + data.id;
 
@@ -2434,7 +2489,110 @@ function viewSubmission(id) {
   filterAdmin();
 
   const detail = document.getElementById('admin-detail');
-  detail.innerHTML = `
+  detail.innerHTML = buildDetailHTML(s);
+
+  // On mobile, open the overlay instead
+  if (window.innerWidth <= 900) {
+    openMobileDetail(id);
+  }
+}
+
+function changeStatus(id, newStatus) {
+  const s = submissions.find(s => s.id === id);
+  if (s) { s.status = newStatus; saveSubmissions(); updateAdminStats(); filterAdmin(); }
+}
+
+function saveNote(id) {
+  const s = submissions.find(s => s.id === id);
+  if (s) {
+    const el = document.getElementById('note-' + id);
+    if (el) s.admin_notes = el.value;
+    saveSubmissions();
+    showToast('Saved', 'Admin note saved for ' + s.company_name);
+  }
+}
+
+function copyContact(id) {
+  const s = submissions.find(s => s.id === id);
+  if (s) {
+    const text = `${s.contact_name} · ${s.contact_designation || ''}\n${s.contact_email}\n${s.contact_phone}\n${s.company_name}`;
+    navigator.clipboard.writeText(text).then(() => showToast('Copied', 'Contact details copied to clipboard.'));
+  }
+}
+
+function exportSubmission(id) {
+  const s = submissions.find(s => s.id === id);
+  if (s) {
+    const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'persefio-' + s.id + '.json'; a.click();
+  }
+}
+
+function updateAdminStats() {
+  document.getElementById('stat-total').textContent = submissions.length;
+  document.getElementById('stat-new').textContent = submissions.filter(s => s.status === 'new').length;
+  document.getElementById('stat-active').textContent = submissions.filter(s => s.status === 'active').length;
+  document.getElementById('stat-express').textContent = submissions.filter(s => s.plan === 'express').length;
+}
+
+function formatTime(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 60000);
+  if (diff < 1) return 'just now';
+  if (diff < 60) return diff + 'm ago';
+  if (diff < 1440) return Math.floor(diff / 60) + 'h ago';
+  return d.toLocaleDateString();
+}
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+
+// ══════════════════════════════════════════
+//  LOCALSTORAGE PERSISTENCE
+// ══════════════════════════════════════════
+
+function saveSubmissions() {
+  try { localStorage.setItem('persefio_submissions', JSON.stringify(submissions)); } catch(e) {}
+}
+
+function loadSubmissions() {
+  try {
+    const saved = localStorage.getItem('persefio_submissions');
+    if (saved) submissions = JSON.parse(saved);
+  } catch(e) {}
+}
+
+// Load on startup
+loadSubmissions();
+
+// ══════════════════════════════════════════
+//  MOBILE DETAIL OVERLAY
+// ══════════════════════════════════════════
+
+function openMobileDetail(id) {
+  const s = submissions.find(s => s.id === id);
+  if (!s) return;
+  selectedSubmission = id;
+  filterAdmin();
+
+  const overlay = document.getElementById('mobile-detail-overlay');
+  const content = document.getElementById('mobile-detail-content');
+
+  // Reuse viewSubmission HTML building logic
+  content.innerHTML = buildDetailHTML(s);
+  overlay.classList.add('open');
+  overlay.scrollTop = 0;
+}
+
+function closeMobileDetail() {
+  document.getElementById('mobile-detail-overlay').classList.remove('open');
+}
+
+function buildDetailHTML(s) {
+  return `
     <div class="detail-header">
       <div>
         <div class="detail-company">${s.id} · ${s.company_industry}</div>
@@ -2497,9 +2655,9 @@ function viewSubmission(id) {
       </div>
       <div class="detail-section">
         <div class="detail-section-title">Admin Notes</div>
-        <textarea class="admin-note-area" id="note-${s.id}" placeholder="Add internal notes, action items, sourcing status...">${s.admin_notes || ''}</textarea>
+        <textarea class="admin-note-area" id="note-mobile-${s.id}" placeholder="Add internal notes, action items, sourcing status...">${s.admin_notes || ''}</textarea>
         <div class="detail-actions">
-          <button class="detail-btn detail-btn-gold" onclick="saveNote('${s.id}')">Save Note</button>
+          <button class="detail-btn detail-btn-gold" onclick="saveNoteMobile('${s.id}')">Save Note</button>
           <button class="detail-btn detail-btn-outline" onclick="copyContact('${s.id}')">Copy Contact</button>
           <button class="detail-btn detail-btn-outline" onclick="exportSubmission('${s.id}')">Export JSON</button>
         </div>
@@ -2508,56 +2666,14 @@ function viewSubmission(id) {
   `;
 }
 
-function changeStatus(id, newStatus) {
-  const s = submissions.find(s => s.id === id);
-  if (s) { s.status = newStatus; updateAdminStats(); viewSubmission(id); filterAdmin(); }
-}
-
-function saveNote(id) {
+function saveNoteMobile(id) {
   const s = submissions.find(s => s.id === id);
   if (s) {
-    s.admin_notes = document.getElementById('note-' + id).value;
+    s.admin_notes = document.getElementById('note-mobile-' + id).value;
+    saveSubmissions();
     showToast('Saved', 'Admin note saved for ' + s.company_name);
   }
 }
-
-function copyContact(id) {
-  const s = submissions.find(s => s.id === id);
-  if (s) {
-    const text = `${s.contact_name} · ${s.contact_designation || ''}\n${s.contact_email}\n${s.contact_phone}\n${s.company_name}`;
-    navigator.clipboard.writeText(text).then(() => showToast('Copied', 'Contact details copied to clipboard.'));
-  }
-}
-
-function exportSubmission(id) {
-  const s = submissions.find(s => s.id === id);
-  if (s) {
-    const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = 'persefio-' + s.id + '.json'; a.click();
-  }
-}
-
-function updateAdminStats() {
-  document.getElementById('stat-total').textContent = submissions.length;
-  document.getElementById('stat-new').textContent = submissions.filter(s => s.status === 'new').length;
-  document.getElementById('stat-active').textContent = submissions.filter(s => s.status === 'active').length;
-  document.getElementById('stat-express').textContent = submissions.filter(s => s.plan === 'express').length;
-}
-
-function formatTime(iso) {
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = Math.floor((now - d) / 60000);
-  if (diff < 1) return 'just now';
-  if (diff < 60) return diff + 'm ago';
-  if (diff < 1440) return Math.floor(diff / 60) + 'h ago';
-  return d.toLocaleDateString();
-}
-
-// ══════════════════════════════════════════
-//  TOAST
-// ══════════════════════════════════════════
 
 let toastTimeout;
 function showToast(title, msg) {
@@ -2566,8 +2682,13 @@ function showToast(title, msg) {
   document.getElementById('toast-msg').textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => t.classList.remove('show'), 3500);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 3200);
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  updateSalary('min');
+  updateSalary('max');
+});
 </script>
 </body>
 </html>
